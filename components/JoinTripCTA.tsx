@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Mail
 } from 'lucide-react';
+import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
@@ -50,18 +52,44 @@ const tripInfo = [
 export function JoinTripCTA() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!email || !email.includes('@')) {
       toast.error('Please enter a valid email address');
       return;
     }
-    // In a real app, you'd send this to your backend
-    toast.success('Thanks! We\'ll notify you about our next adventure.');
-    setEmail('');
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+
+    setLoading(true);
+
+    try {
+      if (!db) {
+        toast.error('Database not initialized');
+        setLoading(false);
+        return;
+      }
+
+      // Save email to Firestore collection
+      const subscriptionsRef = collection(db, 'tripSubscriptions');
+      await addDoc(subscriptionsRef, {
+        email: email.toLowerCase().trim(),
+        createdAt: Timestamp.now(),
+        status: 'active',
+        source: 'website',
+      });
+
+      toast.success('Thanks! We\'ll notify you about our next adventure.');
+      setEmail('');
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (error: any) {
+      console.error('Error saving email:', error);
+      toast.error(error.message || 'Failed to subscribe. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -145,6 +173,7 @@ export function JoinTripCTA() {
                 </div>
                 <button
                   type="submit"
+                  disabled={loading}
                   className={cn(
                     'px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600',
                     'text-white font-semibold rounded-lg',
@@ -152,10 +181,16 @@ export function JoinTripCTA() {
                     'transform hover:scale-105 active:scale-95',
                     'transition-all duration-200 shadow-lg hover:shadow-xl',
                     'flex items-center justify-center space-x-2',
-                    'text-sm sm:text-base whitespace-nowrap'
+                    'text-sm sm:text-base whitespace-nowrap',
+                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none'
                   )}
                 >
-                  {submitted ? (
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Joining...</span>
+                    </>
+                  ) : submitted ? (
                     <>
                       <CheckCircle2 className="w-5 h-5" />
                       <span>Joined!</span>
@@ -213,14 +248,21 @@ export function JoinTripCTA() {
               />
               <button
                 type="submit"
+                disabled={loading}
                 className={cn(
                   'px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg',
                   'hover:bg-blue-700 transition-colors duration-200',
                   'flex items-center justify-center space-x-2',
-                  'text-sm sm:text-base'
+                  'text-sm sm:text-base',
+                  'disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >
-                {submitted ? (
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Subscribing...</span>
+                  </>
+                ) : submitted ? (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
                     <span>Subscribed!</span>
