@@ -9,7 +9,9 @@ import {
   Star, 
   Bell,
   CheckCircle2,
-  Mail
+  Mail,
+  User,
+  Phone
 } from 'lucide-react';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -51,14 +53,23 @@ const tripInfo = [
 
 export function JoinTripCTA() {
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !email.includes('@')) {
-      toast.error('Please enter a valid email address');
+    if (!name || name.trim().length < 2) {
+      toast.error('Please enter your name');
+      return;
+    }
+
+    if (!phone || phone.trim().length < 10) {
+      toast.error('Please enter a valid phone number');
       return;
     }
 
@@ -68,6 +79,46 @@ export function JoinTripCTA() {
       if (!db) {
         toast.error('Database not initialized');
         setLoading(false);
+        return;
+      }
+
+      // Save to Firestore collection
+      const tripRegistrationsRef = collection(db, 'tripRegistrations');
+      await addDoc(tripRegistrationsRef, {
+        name: name.trim(),
+        phone: phone.trim(),
+        createdAt: Timestamp.now(),
+        status: 'pending',
+        source: 'website',
+      });
+
+      toast.success('Thanks! We\'ll contact you about our next adventure.');
+      setName('');
+      setPhone('');
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (error: any) {
+      console.error('Error saving registration:', error);
+      toast.error(error.message || 'Failed to register. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setEmailLoading(true);
+
+    try {
+      if (!db) {
+        toast.error('Database not initialized');
+        setEmailLoading(false);
         return;
       }
 
@@ -82,13 +133,13 @@ export function JoinTripCTA() {
 
       toast.success('Thanks! We\'ll notify you about our next adventure.');
       setEmail('');
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
+      setEmailSubmitted(true);
+      setTimeout(() => setEmailSubmitted(false), 3000);
     } catch (error: any) {
       console.error('Error saving email:', error);
       toast.error(error.message || 'Failed to subscribe. Please try again.');
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -141,68 +192,84 @@ export function JoinTripCTA() {
             })}
           </div>
 
-          {/* Join Next Trip Email Form */}
+          {/* Join Next Trip Form */}
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-6 sm:p-8 mb-8 shadow-lg">
             <div className="text-center mb-6">
               <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 Join Our Next Trip
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Enter your email to get notified when we announce our next adventure
+                Fill in your details to join our next adventure
               </p>
             </div>
-            <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className={cn(
-                      'w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600',
-                      'bg-white dark:bg-gray-700',
-                      'text-gray-900 dark:text-white',
-                      'placeholder-gray-500 dark:placeholder-gray-400',
-                      'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-                      'text-sm sm:text-base'
-                    )}
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
+            <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
                   className={cn(
-                    'px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600',
-                    'text-white font-semibold rounded-lg',
-                    'hover:from-blue-700 hover:to-indigo-700',
-                    'transform hover:scale-105 active:scale-95',
-                    'transition-all duration-200 shadow-lg hover:shadow-xl',
-                    'flex items-center justify-center space-x-2',
-                    'text-sm sm:text-base whitespace-nowrap',
-                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none'
+                    'w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600',
+                    'bg-white dark:bg-gray-700',
+                    'text-gray-900 dark:text-white',
+                    'placeholder-gray-500 dark:placeholder-gray-400',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                    'text-sm sm:text-base'
                   )}
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Joining...</span>
-                    </>
-                  ) : submitted ? (
-                    <>
-                      <CheckCircle2 className="w-5 h-5" />
-                      <span>Joined!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Bell className="w-5 h-5" />
-                      <span>Join Trip</span>
-                    </>
-                  )}
-                </button>
+                  required
+                />
               </div>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+123456789"
+                  className={cn(
+                    'w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600',
+                    'bg-white dark:bg-gray-700',
+                    'text-gray-900 dark:text-white',
+                    'placeholder-gray-500 dark:placeholder-gray-400',
+                    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
+                    'text-sm sm:text-base'
+                  )}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  'w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600',
+                  'text-white font-semibold rounded-lg',
+                  'hover:from-blue-700 hover:to-indigo-700',
+                  'transform hover:scale-105 active:scale-95',
+                  'transition-all duration-200 shadow-lg hover:shadow-xl',
+                  'flex items-center justify-center space-x-2',
+                  'text-sm sm:text-base',
+                  'disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none'
+                )}
+              >
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Joining...</span>
+                  </>
+                ) : submitted ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>Joined!</span>
+                  </>
+                ) : (
+                  <>
+                    <Bell className="w-5 h-5" />
+                    <span>Join Trip</span>
+                  </>
+                )}
+              </button>
             </form>
           </div>
 
@@ -230,7 +297,7 @@ export function JoinTripCTA() {
                 Get Notified About Our Next Trip
               </h3>
             </div>
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleEmailSubmit} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 value={email}
@@ -248,7 +315,7 @@ export function JoinTripCTA() {
               />
               <button
                 type="submit"
-                disabled={loading}
+                disabled={emailLoading}
                 className={cn(
                   'px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg',
                   'hover:bg-blue-700 transition-colors duration-200',
@@ -257,12 +324,12 @@ export function JoinTripCTA() {
                   'disabled:opacity-50 disabled:cursor-not-allowed'
                 )}
               >
-                {loading ? (
+                {emailLoading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Subscribing...</span>
                   </>
-                ) : submitted ? (
+                ) : emailSubmitted ? (
                   <>
                     <CheckCircle2 className="w-5 h-5" />
                     <span>Subscribed!</span>

@@ -1,18 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { Menu, X, Home, Info, Mail } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Menu, X, Home, Info, Mail } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
+import { cn } from "@/lib/utils";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/#about', label: 'About', icon: Info },
-    { href: '/#contact', label: 'Contact', icon: Mail },
+    { href: "/", label: "Home", icon: Home },
+    { href: "/#about", label: "About", icon: Info },
+    { href: "/#contact", label: "Contact", icon: Mail },
   ];
 
   return (
@@ -22,10 +23,19 @@ export function Header() {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-2 text-xl font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
           >
-            <span>🌍</span>
-            <span>Joy's World</span>
+            <Image
+              src="/logo.jpeg"
+              alt="Joy's World Logo"
+              width={40}
+              height={40}
+              className="rounded-lg object-contain"
+              priority
+            />
+            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              JoysWorld
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -88,4 +98,3 @@ export function Header() {
     </header>
   );
 }
-
